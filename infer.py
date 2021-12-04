@@ -98,7 +98,7 @@ def restore_model(config_file, encoder_checkpoint, decoder_checkpoint):
     neural_factory = nemo.core.NeuralModuleFactory(
         placement=nemo.core.DeviceType.GPU,
         backend=nemo.core.Backend.PyTorch)
-    #print(model_definition)
+    
     data_layer = AudioDataLayer(sample_rate=model_definition['AudioToMelSpectrogramPreprocessor']['sample_rate'])
 
     data_preprocessor = nemo_asr.AudioToMelSpectrogramPreprocessor(**model_definition['AudioToMelSpectrogramPreprocessor'])
@@ -110,15 +110,15 @@ def restore_model(config_file, encoder_checkpoint, decoder_checkpoint):
     jasper_decoder = nemo_asr.JasperDecoderForCTC(
         feat_in=model_definition['JasperEncoder']['jasper'][-1]['filters'],
         num_classes=len(model_definition['labels']))
-
+    
     greedy_decoder = nemo_asr.GreedyCTCDecoder()
     labels = model_definition['labels']
-    beam_search_lm = nemo_asr.BeamSearchDecoderWithLM(vocab=labels, beam_width=200, alpha=2, beta=2.5, lm_path="NeMo/scripts/language_model2/5-gram-lm.binary", num_cpus=4)
-
+    beam_search_lm = nemo_asr.BeamSearchDecoderWithLM(vocab=labels, beam_width=200, alpha=2, beta=2.5, lm_path="nemo/scripts/language_model2/5-gram-lm.binary", num_cpus=4)
+    
     # load pre-trained model
     jasper_encoder.restore_from(CHECKPOINT_ENCODER)
     jasper_decoder.restore_from(CHECKPOINT_DECODER)
-
+    
     # Define inference DAG
     audio_signal, audio_signal_len = data_layer()
     processed_signal, processed_signal_len = data_preprocessor(input_signal=audio_signal, length=audio_signal_len)
@@ -150,20 +150,20 @@ def restore_model(config_file, encoder_checkpoint, decoder_checkpoint):
     
     return neural_factory
 
-def run():
-    config = 'config/quartznet12x1_abc.yaml'
-    encoder_checkpoint = 'quartznet12x1_abc_them100h/checkpoints/JasperEncoder-STEP-289936.pt'
-    decoder_checkpoint = 'quartznet12x1_abc_them100h/checkpoints/JasperDecoderForCTC-STEP-289936.pt'
+# def run():
+#     config = 'config/quartznet12x1_abc.yaml'
+#     encoder_checkpoint = 'quartznet12x1_abc_them100h/checkpoints/JasperEncoder-STEP-289936.pt'
+#     decoder_checkpoint = 'quartznet12x1_abc_them100h/checkpoints/JasperDecoderForCTC-STEP-289936.pt'
 
-    neural_factory = restore_model(config, encoder_checkpoint, decoder_checkpoint)
-    print('restore model checkpoint done!')
-    test_wav_dir = '/media/trung/nvme0n1p4//dataset_ASR/all_wav_thai_son/'
+#     neural_factory = restore_model(config, encoder_checkpoint, decoder_checkpoint)
+#     print('restore model checkpoint done!')
+#     test_wav_dir = '/media/trung/nvme0n1p4//dataset_ASR/all_wav_thai_son/'
 
-    for f in os.listdir(test_wav_dir):
-        print("==============================")
-        print(f)
-        sig = load_audio(test_wav_dir +f)
-        _ = neural_factory.infer_signal(sig)#[0]#.cpu().numpy()[0]
+#     for f in os.listdir(test_wav_dir):
+#         print("==============================")
+#         print(f)
+#         sig = load_audio(test_wav_dir +f)
+#         _ = neural_factory.infer_signal(sig)#[0]#.cpu().numpy()[0]
         #print('predicted:', predicted)
         #print('predicted:', p2g(predicted))
 
